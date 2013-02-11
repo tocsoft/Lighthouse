@@ -45,7 +45,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>C:\Utils\arduino-1.0.3\hardware\arduino\cores\arduino;C:\Utils\arduino-1.0.3\hardware\arduino\variants\leonardo;c:\utils\arduino-1.0.3\hardware\tools\avr\avr\include\;c:\utils\arduino-1.0.3\hardware\tools\avr\avr\include\avr\;c:\utils\arduino-1.0.3\hardware\tools\avr\avr\;c:\utils\arduino-1.0.3\hardware\tools\avr\lib\gcc\avr\4.3.2\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>C:\Users\scottw\Documents\Visual Studio 2012\Projects\Lighthouse\Lighthouse_Hardware\Visual Micro\.Lighthouse_Hardware.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <ForcedIncludeFiles>C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Visual Micro\.Lighthouse_Hardware.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>ARDUINO=103;__AVR_ATmega32U4__;F_CPU=16000000L;__AVR__;__cplusplus;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
