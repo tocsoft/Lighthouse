@@ -1,0 +1,9 @@
+<VisualMicro>
+  <Program Ext=".ino" Name="Lighthouse_Hardware" Location="C:\Users\scottw\Documents\Visual Studio 2012\Projects\Lighthouse\Lighthouse_Hardware">
+    <Compile IsCompiled="0" CompilerErrors="0" ConfigurationName="Debug" StopOnError="False" OptimiseLibs="True" OptimiseCore="True" BuildPath="C:\Users\scottw\AppData\Local\VMicro\Arduino\Builds\Lighthouse_Hardware\leonardo" />
+    <Debug />
+    <Platform Name="Arduino">
+      <Board Name="leonardo" Description="Arduino Leonardo" CoreFolder="C:\Utils\arduino-1.0.3\hardware\arduino\cores\arduino" VariantFullPath="C:\Utils\arduino-1.0.3\hardware\arduino\variants\leonardo" bootloader.extended_fuses="0xcb" bootloader.file="Caterina-Leonardo.hex" bootloader.high_fuses="0xd8" bootloader.lock_bits="0x2F" bootloader.low_fuses="0xff" bootloader.path="caterina" bootloader.unlock_bits="0x3F" build.core="arduino" build.f_cpu="16000000L" build.mcu="atmega32u4" build.pid="0x8036" build.variant="leonardo" build.variant.vmresolved="C:\Utils\arduino-1.0.3\hardware\arduino\variants\leonardo" build.vid="0x2341" name="Arduino Leonardo" upload.disable_flushing="true" upload.maximum_size="28672" upload.protocol="avr109" upload.speed="57600" />
+    </Platform>
+  </Program>
+</VisualMicro>
