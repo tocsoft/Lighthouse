@@ -13,52 +13,56 @@ namespace Lighthouse.Win
 	public partial class Form1 : Form
 	{
 		WebKit.WebKitBrowser editer;
-		//WebKit.WebKitBrowser viewer;
+		WebKit.WebKitBrowser viewer;
 		Control.SampleDevice _device = new Control.SampleDevice();
-		string viewerUrl;
 		string editUrl;
 		string xmlToLoad;
-		BlocklyDebugger debugger; 
-
+		BlocklyDebugger debugger;
+		Lighthouse.Control.JavascriptRunner runner;
 		public Form1()
 		{
 			InitializeComponent();
 
 
-			//viewer = new WebKit.WebKitBrowser();
-			//viewer.Dock = DockStyle.Fill;
-			//viewer.Hide();
-			//panel1.Controls.Add(viewer);
+			viewer = new WebKit.WebKitBrowser();
+			viewer.Dock = DockStyle.Fill;
+			viewer.Hide();
+			panel1.Controls.Add(viewer);
 
 			editer = new WebKit.WebKitBrowser();
 			editer.Dock = DockStyle.Fill;
 			panel1.Controls.Add(editer);
 
-			debugger = new BlocklyDebugger(editer, _device);
+			debugger = new BlocklyDebugger(viewer, _device);
+			runner=  new Control.JavascriptRunner(_device, debugger);
+			viewer.Load += viewer_Load;
 
-			//viewer.Load += viewer_Load;
+			runner.Stopped += _device_ProgramStopped;
 
-			_device.ProgramStopped += _device_ProgramStopped;
-
-			//viewer.DocumentCompleted += viewer_DocumentCompleted;
+			viewer.DocumentCompleted += viewer_DocumentCompleted;
 			editer.DocumentCompleted += editer_DocumentCompleted;
 
 			this.FormClosed += (s, e) =>
 			{
 				editer.Dispose();
+				viewer.Dispose();
 			};
 		}
 
 		void viewer_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
 		{
 
-			//var xml = editer.GetScriptManager.CallFunction("getXml", new object[] { });
-			//viewer.GetScriptManager.CallFunction("loadXml", new object[] { xml.ToString() });
+			var xml = editer.GetScriptManager.CallFunction("getXml", new object[] { });
+			var val = viewer.GetScriptManager.CallFunction("setupViewMode", new object[] { xml.ToString() });
+			//var val = viewer.GetScriptManager.CallFunction("getCode", new object[] { });
+			var code = val.ToString();
+
+			runner.Run(code);
 		}
+
 		void editer_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
 		{
-
-			editer.GetScriptManager.CallFunction("loadXml", new object[] { xmlToLoad });
+			editer.GetScriptManager.CallFunction("setupEditMode", new object[] { xmlToLoad });
 		}
 
 		void viewer_Load(object sender, EventArgs e)
@@ -71,9 +75,9 @@ namespace Lighthouse.Win
 
 			runToolStripMenuItem.Enabled = false;
 
-			stopToolStripMenuItem.Enabled = _device.IsProgramRunning;
-			runToolStripMenuItem.Enabled = !_device.IsProgramRunning;
-			//viewer.Hide();
+			stopToolStripMenuItem.Enabled = runner.IsRunning;
+			runToolStripMenuItem.Enabled = !runner.IsRunning;
+			viewer.Hide();
 			editer.Show();
 		}
 		
@@ -82,10 +86,7 @@ namespace Lighthouse.Win
 			FileInfo file = new FileInfo("blockly\\edit.html");
 			editUrl = "file:///" + file.FullName.Replace("\\", "/").Replace(" ", "%20");
 			editer.Navigate(editUrl);
-
-			 //file = new FileInfo("blockly\\view.html");
-			 //viewerUrl = "file:///" + file.FullName.Replace("\\", "/").Replace(" ", "%20");
-			 //viewer.Navigate(viewerUrl);
+			viewer.Navigate(editUrl);
 
 			
 			_device.Refresh();
@@ -93,29 +94,30 @@ namespace Lighthouse.Win
 
 		private void runToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (!_device.IsProgramRunning)
+			if (!runner.IsRunning)
 			{
 
-//				editer.Hide();
-	//			viewer.Show();
-				//viewer.Navigate(viewerUrl);
+				editer.Hide();
+				viewer.Show();
+				viewer.Navigate(editUrl);
 
 
 				stopToolStripMenuItem.Enabled = true;
 				runToolStripMenuItem.Enabled = false;
-				var val = editer.GetScriptManager.CallFunction("getCode", new object[] { });
-				var code = val.ToString();
-				_device.RunProgram(code, debugger);
+				
 
 
 
 			}
 		}
 
+
+
 		private void stopToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (_device.IsProgramRunning) {
-				_device.StopProgram();
+			if (runner.IsRunning)
+			{
+				runner.Stop();
 			}
 		}
 

@@ -18,7 +18,7 @@ VariableResistor ldr;
 
 void System::init(String id)
 {
-	Serial.begin(9600);   
+	Serial.begin(57600);   
 	//setup button on pin2
 	switch1.init(*this, 2, "SWITCH1");
 	button1.init(*this, 7, "BUTTON1");

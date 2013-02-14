@@ -47,7 +47,8 @@
     <Compile Include="Button.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="IDebugger.cs" />
-    <Compile Include="NoOpDebugger.cs" />
+    <Compile Include="JavascriptRunner.cs" />
+    <Compile Include="SystemUtilities.cs" />
     <Compile Include="VariableInput.cs" />
     <Compile Include="RgbLed.cs" />
     <Compile Include="Led.cs" />

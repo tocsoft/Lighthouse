@@ -75,21 +75,20 @@ namespace Lighthouse.Control
 				if (deviceProperties[prop] == val)
 				{
 					localProperties.TryRemove(prop, out tmp);
-				}
-				else
-				{
-
-					if (!localProperties.ContainsKey(prop) || localProperties[prop] != val)
-					{
-						localProperties.AddOrUpdate(prop, val, (c, d) =>
-						{
-							return val;
-						});
-						if (PropertyChanged != null)
-							PropertyChanged.Invoke(this, new PropertyChangedEventArgs(prop, val));
-					}
+					return;
 				}
 			}
+
+			if (!localProperties.ContainsKey(prop) || localProperties[prop] != val)
+			{
+				localProperties.AddOrUpdate(prop, val, (c, d) =>
+				{
+					return val;
+				});
+				if (PropertyChanged != null)
+					PropertyChanged.Invoke(this, new PropertyChangedEventArgs(prop, val));
+			}
+
 
 		}
 

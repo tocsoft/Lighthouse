@@ -50,11 +50,11 @@ Blockly.Language.variableinput_value = {
     // Block for checking if there a wall.
     helpUrl: '',
     init: function () {
-        this.setColour(120);
+        this.setColour(230);//number colour
         this.setOutput(true, Number);
         this.appendDummyInput()
             .appendTitle(new Blockly.FieldDropdown(this.DEVICE), 'DEVICE')
-            .appendTitle('is on')
+            .appendTitle('value')
 
         this.setTooltip('Returns number between 0 and 255 for the device');
     }
@@ -63,24 +63,42 @@ Blockly.Language.variableinput_value = {
 Blockly.Language.variableinput_value.DEVICE = [['Knob', 'Knob'], ['Light sensor', 'Light']];
 
 
-Blockly.Language.rgb_setcolour = {
-    // Block for checking if there a wall.
+//Blockly.Language.rgb_setcolour = {
+//    // Block for checking if there a wall.
+//    helpUrl: '',
+//    init: function () {
+//        this.setColour(120);
+//        this.setOutput(true, Number);
+//        this.appendDummyInput()
+//            .appendTitle(new Blockly.FieldDropdown(this.DEVICE), 'DEVICE')
+//            .appendTitle('is on')
+
+//        this.appendValueInput('COLOR')
+//          .setCheck('Colour')
+//          .setAlign(Blockly.ALIGN_RIGHT)
+//          .appendTitle(Blockly.LANG_COLOUR_BLEND_TITLE);
+
+//        this.setTooltip('Sets the colour for the light');
+//    }
+//};
+//Blockly.Language.rgb_setcolour.DEVICE = [['Multi-colour', 'Rgb']];
+
+
+
+
+Blockly.Language.system_sleep = {
+    // Block for moving forward or backwards.
     helpUrl: '',
     init: function () {
-        this.setColour(120);
-        this.setOutput(true, Number);
+        this.setColour(290);
+
         this.appendDummyInput()
-            .appendTitle(new Blockly.FieldDropdown(this.DEVICE), 'DEVICE')
-            .appendTitle('is on')
+            .appendTitle("Wait")
+            .appendTitle(new Blockly.FieldTextInput('1', Blockly.FieldTextInput.numberValidator), 'SECS')
+            .appendTitle("second(s)")
 
-        this.appendValueInput('COLOR')
-          .setCheck('Colour')
-          .setAlign(Blockly.ALIGN_RIGHT)
-          .appendTitle(Blockly.LANG_COLOUR_BLEND_TITLE);
-
-        this.setTooltip('Sets the colour for the light');
+        this.setPreviousStatement(true);
+        this.setNextStatement(true);
+        this.setTooltip('Wait a number of seconds before continuing');
     }
 };
-Blockly.Language.rgb_setcolour.DEVICE = [['Multi-colour', 'Rgb']];
-
-

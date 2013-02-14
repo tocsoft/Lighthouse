@@ -32,11 +32,6 @@ namespace Lighthouse.Control
 			_id = Id;
 
 			StatusUpdate += Arduino_StatusUpdate;
-
-			_worker.DoWork += _worker_DoWork;
-			_worker.WorkerSupportsCancellation = true;
-			_worker.RunWorkerCompleted += _worker_RunWorkerCompleted;
-
 			_spProcessor.WorkerSupportsCancellation = true;
 			_spProcessor.DoWork += _spProcessor_DoWork;
 			_spProcessor.RunWorkerAsync();
@@ -73,71 +68,16 @@ namespace Lighthouse.Control
 
 		protected abstract void Initialize();
 
-		void _worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-		{
-			
-			if(ProgramStopped != null)
-				ProgramStopped.Invoke(this, new EventArgs());
-		}
-
+		
 		public Arduino()
 			: this(Guid.Empty)
 		{
 			
 		}
 
-		BackgroundWorker _worker = new BackgroundWorker();
 		BackgroundWorker _spProcessor = new BackgroundWorker();
-		public void RunProgram(string code, IDebugger debugger) { 
-			//this will "program" the device with this code and have it run
-			_worker.RunWorkerAsync(new Codebase {
-				Debugger = debugger,
-				Code = code
-			});
-		}
-		public void RunProgram(string code) { 
-			//this will "program" the device with this code and have it run
-			RunProgram(code, new NoOpDebugger());
-		}
 		
 		
-		public void StopProgram() {
-			_worker.CancelAsync();
-
-		}
-		public bool IsProgramRunning { get { return _worker.IsBusy; } }
-		JavascriptContext _context;
-		void _worker_DoWork(object sender, DoWorkEventArgs e)
-		{
-			var app = (Codebase)e.Argument;
-
-			this.Refresh();
-			try
-			{
-				
-				while (!_worker.CancellationPending)
-				{
-
-					int counter = 0;
-					using (_context = new JavascriptContext())
-					{
-						// Setting the externals parameters of the context
-						_context.SetParameter("device", this);
-						_context.SetParameter("__debugger__", app.Debugger);
-
-						//while (!_worker.CancellationPending && counter < 50000)
-						{
-							counter++;
-							_context.Run(app.Code);
-							//this.Flush();
-						}
-					}
-				}
-			}
-			catch { Console.WriteLine("Error--investigate"); }
-			_context = null;
-
-		}
 		StringBuilder _lineBuffer = new StringBuilder();
 		private void processFromPort(SerialPort sp){
 			lock (sp)
@@ -196,7 +136,6 @@ namespace Lighthouse.Control
 		}
 
 		public event EventHandler<StatusEventArgs> StatusUpdate;
-		public event EventHandler ProgramStopped;
 
 
 		void sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -217,15 +156,15 @@ namespace Lighthouse.Control
 				try
 				{
 					_reportedId = Guid.Empty;
-					sp = new SerialPort(port, 9600);
+					sp = new SerialPort(port, 57600);
 					sp.DataReceived += sp_DataReceived;
 					sp.DtrEnable = true;
+					sp.RtsEnable = true;
 					sp.Open();
 
 					//clear buffer before opp to make sure we only recieve the right stuff back
 					
 						sp.WriteLine("STATUS");
-					
 
 					if (_id == Guid.Empty || _reportedId == _id)
 					{

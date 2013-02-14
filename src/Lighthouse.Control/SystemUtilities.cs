@@ -2,14 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Lighthouse.Control
 {
-	class NoOpDebugger : IDebugger
-	{
-
-		public void Enter(int handle) { }
-
-		public void Exit(int handle) { }
-	}
 }

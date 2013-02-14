@@ -33,7 +33,7 @@ namespace Sandbox
 
 			while (true) {
 
-				if (device.Light.Value < 125)
+				if (device.Light.Value < 125 || device.Switch1.IsOn)
 					device.Led1.IsOn = true;
 				else
 					device.Led1.IsOn = false;
@@ -75,11 +75,12 @@ if(device.Knob.Value > 230){
 
 ";
 			
-			device.RunProgram(prog);
-			while (device.IsProgramRunning)
-			{
-				//hold loop
-			}
+
+			//device.RunProgram(prog);
+			//while (device.IsProgramRunning)
+			//{
+			//	//hold loop
+			//}
 			Console.ReadLine();
 			device.Disconnect();
 		}
