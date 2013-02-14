@@ -20,11 +20,11 @@ void Button::init(System &system, int pin, String name)
 void Button::sendStatus()
 {
 	Serial.print(_name);
-	Serial.print(" STATE ");
+	Serial.print(" ON ");
 	if(!_isOn){
-		Serial.println("ON");
+		Serial.println("1");
 	}else{
-		Serial.println("OFF");
+		Serial.println("0");
 	}
 }
 

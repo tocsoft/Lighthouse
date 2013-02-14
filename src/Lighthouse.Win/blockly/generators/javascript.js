@@ -29,6 +29,11 @@ goog.require('Blockly.CodeGenerator');
 
 Blockly.JavaScript = Blockly.Generator.get('JavaScript');
 
+
+Blockly.JavaScript.DEBUGGER_CODE_ENTER = "";
+Blockly.JavaScript.DEBUGGER_CODE_EXIT = "";
+
+
 /**
  * List of illegal variable names.
  * This is not intended to be a security feature.  Blockly is 100% client-side,
@@ -209,5 +214,14 @@ Blockly.JavaScript.scrub_ = function(block, code) {
   }
   var nextBlock = block.nextConnection && block.nextConnection.targetBlock();
   var nextCode = this.blockToCode(nextBlock);
-  return commentCode + code + nextCode;
+
+  var debugEnter = "";
+  var debugExit = "";
+    //we can only debug stuff thats stand alone and does not have a return type
+  if (block.outputConnection == null) {
+      debugEnter = Blockly.CSharp.DEBUGGER_CODE_ENTER.replace("%ID%", block.id);
+      debugExit = Blockly.CSharp.DEBUGGER_CODE_EXIT.replace("%ID%", block.id);
+  }
+
+  return debugEnter + commentCode + code + debugExit + nextCode;
 };

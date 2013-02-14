@@ -12,7 +12,9 @@ void Led::init(System &system, int pin, String name)
 	_name = name;
 	_isOn = false;
 	
-	_brightness = 255;
+	_flashingSpeed = 100;
+	_isFlashing = false;
+
 
 	pinMode(_pin, OUTPUT);
 }
@@ -23,31 +25,35 @@ void Led::sendStatus()
 {
 	//state
 	Serial.print(_name);
-	Serial.print(" STATE ");
+	Serial.print(" ON ");
 	if(_isOn){
-		Serial.println("ON");
+		Serial.println("1");
 	}else{
-		Serial.println("OFF");
+		Serial.println("0");
 	}
 
-	//Color
 	Serial.print(_name);
-	Serial.print(" BRIGHTNESS ");
-	
-	Serial.print(_brightness);
-
-	Serial.println();
-	
+	Serial.print(" FLASH ");
+	if(_isFlashing){
+		Serial.println("1");
+	}else{
+		Serial.println("0");
+	}
+	Serial.print(_name);
+	Serial.print(" FLASH_SPEED ");
+	Serial.println(_flashingSpeed);
 }
 
 void Led::recieveCommand(String name, String prop, String value){
 	if(name==_name){
-		if( prop == "STATE"){
-		_isOn = value == "ON";
-		}else if(prop == "BRIGHTNESS"){
-			
-			_brightness = UTILS.stringToInt(value);
-
+		if( prop == "ON"){
+		_isOn = value == "1";
+		}else if( prop == "FLASH"){
+		_isFlashing = value == "1";
+		if(_isFlashing)
+			_isOn = true;
+		}else if( prop == "FLASH_SPEED"){
+			_flashingSpeed = UTILS.stringToInt(value);
 		}
 
 		sendStatus();
@@ -55,11 +61,21 @@ void Led::recieveCommand(String name, String prop, String value){
 }
 
 void Led::loop(){
-	if(_isOn){
-		digitalWrite(_pin, HIGH);
-	}else{
-		digitalWrite(_pin, LOW);
-	}
+		if(_isFlashing){
+			int n =  millis();
+			if((n - _lastFlash) > (_flashingSpeed * 50))
+			{
+				_lastFlash = n;
+				_isOn = !_isOn;
+				sendStatus();
+			}
+		}
+
+		if(_isOn){
+				digitalWrite(_pin, HIGH);
+			}else{
+				 digitalWrite(_pin, LOW);
+			}
 }
 
 

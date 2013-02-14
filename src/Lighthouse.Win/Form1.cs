@@ -13,40 +13,47 @@ namespace Lighthouse.Win
 	public partial class Form1 : Form
 	{
 		WebKit.WebKitBrowser editer;
-		WebKit.WebKitBrowser viewer;
+		//WebKit.WebKitBrowser viewer;
 		Control.SampleDevice _device = new Control.SampleDevice();
 		string viewerUrl;
 		string editUrl;
 		string xmlToLoad;
+		BlocklyDebugger debugger; 
+
 		public Form1()
 		{
 			InitializeComponent();
 
 
-			viewer = new WebKit.WebKitBrowser();
-			viewer.Dock = DockStyle.Fill;
-			viewer.Hide();
-			panel1.Controls.Add(viewer);
+			//viewer = new WebKit.WebKitBrowser();
+			//viewer.Dock = DockStyle.Fill;
+			//viewer.Hide();
+			//panel1.Controls.Add(viewer);
 
 			editer = new WebKit.WebKitBrowser();
 			editer.Dock = DockStyle.Fill;
 			panel1.Controls.Add(editer);
 
-			viewer.Load += viewer_Load;
+			debugger = new BlocklyDebugger(editer, _device);
+
+			//viewer.Load += viewer_Load;
 
 			_device.ProgramStopped += _device_ProgramStopped;
 
-			viewer.DocumentCompleted += viewer_DocumentCompleted;
+			//viewer.DocumentCompleted += viewer_DocumentCompleted;
 			editer.DocumentCompleted += editer_DocumentCompleted;
 
-
+			this.FormClosed += (s, e) =>
+			{
+				editer.Dispose();
+			};
 		}
 
 		void viewer_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
 		{
 
-			var xml = editer.GetScriptManager.CallFunction("getXml", new object[] { });
-			viewer.GetScriptManager.CallFunction("loadXml", new object[] { xml.ToString() });
+			//var xml = editer.GetScriptManager.CallFunction("getXml", new object[] { });
+			//viewer.GetScriptManager.CallFunction("loadXml", new object[] { xml.ToString() });
 		}
 		void editer_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
 		{
@@ -66,7 +73,7 @@ namespace Lighthouse.Win
 
 			stopToolStripMenuItem.Enabled = _device.IsProgramRunning;
 			runToolStripMenuItem.Enabled = !_device.IsProgramRunning;
-			viewer.Hide();
+			//viewer.Hide();
 			editer.Show();
 		}
 		
@@ -76,9 +83,9 @@ namespace Lighthouse.Win
 			editUrl = "file:///" + file.FullName.Replace("\\", "/").Replace(" ", "%20");
 			editer.Navigate(editUrl);
 
-			 file = new FileInfo("blockly\\view.html");
-			 viewerUrl = "file:///" + file.FullName.Replace("\\", "/").Replace(" ", "%20");
-			 viewer.Navigate(viewerUrl);
+			 //file = new FileInfo("blockly\\view.html");
+			 //viewerUrl = "file:///" + file.FullName.Replace("\\", "/").Replace(" ", "%20");
+			 //viewer.Navigate(viewerUrl);
 
 			
 			_device.Refresh();
@@ -89,15 +96,16 @@ namespace Lighthouse.Win
 			if (!_device.IsProgramRunning)
 			{
 
-				editer.Hide();
-				viewer.Show();
-				viewer.Navigate(viewerUrl);
+//				editer.Hide();
+	//			viewer.Show();
+				//viewer.Navigate(viewerUrl);
+
 
 				stopToolStripMenuItem.Enabled = true;
 				runToolStripMenuItem.Enabled = false;
 				var val = editer.GetScriptManager.CallFunction("getCode", new object[] { });
 				var code = val.ToString();
-				_device.RunProgram(code);
+				_device.RunProgram(code, debugger);
 
 
 
@@ -128,6 +136,8 @@ namespace Lighthouse.Win
 				editer.Navigate(editUrl);
 			}
 		}
+
+
 
 		
 	}

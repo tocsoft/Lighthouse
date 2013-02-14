@@ -1,4 +1,5 @@
 
+#include "VariableResistor.h"
 #include "Led.h"
 #include "Utils.h"
 #include "Rgb.h"

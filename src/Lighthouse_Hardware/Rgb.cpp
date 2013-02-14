@@ -29,50 +29,41 @@ void Rgb::sendStatus()
 {
 	//state
 	Serial.print(_name);
-	Serial.print(" STATE ");
+	Serial.print(" ON ");
 	if(_isOn){
-		Serial.println("ON");
+		Serial.println("1");
 	}else{
-		Serial.println("OFF");
+		Serial.println("0");
 	}
 
 	//Color
 	Serial.print(_name);
-	Serial.print(" COLOR ");
+	Serial.print(" RED ");
+	Serial.println(_brightnessRed);
 	
-	Serial.print(_brightnessRed);
-	Serial.print(" ");
-	Serial.print(_brightnessGreen);
-	Serial.print(" ");
-	Serial.print(_brightnessBlue);
+	Serial.print(_name);
+	Serial.print(" GREEN ");
+	Serial.println(_brightnessGreen);
+	
+	Serial.print(_name);
+	Serial.print(" BLUE ");
+	Serial.println(_brightnessBlue);
 
-	Serial.println();
 	
 }
 
 void Rgb::recieveCommand(String name, String prop, String value){
 	if(name==_name){
-		if( prop == "STATE"){
-		_isOn = value == "ON";
-		}else if(prop == "COLOR"){
-			int firstSpace = value.indexOf(' ', 0);
-			if(firstSpace == -1)
-				firstSpace = value.length();
-		
-			String red = value.substring(0, firstSpace);
-			String leftovervalue = value.substring(firstSpace+1, value.length());
+		if( prop == "ON"){
+			_isOn = value == "1";
+		}else if(prop == "RED"){
+			_brightnessRed = UTILS.stringToInt(value);
 
-			 firstSpace = leftovervalue.indexOf(' ', 0);
-			if(firstSpace == -1)
-				firstSpace = leftovervalue.length();
-		
-			String green = leftovervalue.substring(0, firstSpace);
-			String blue = leftovervalue.substring(firstSpace+1, leftovervalue.length());
-		
-			_brightnessRed = UTILS.stringToInt(red);
-			_brightnessGreen = UTILS.stringToInt(green);
-			_brightnessBlue = UTILS.stringToInt(blue);
+		}else if(prop == "GREEN"){
+			_brightnessGreen = UTILS.stringToInt(value);
 
+		}else if(prop == "BLUE"){
+			_brightnessBlue = UTILS.stringToInt(value);
 		}
 		sendStatus();
 	}

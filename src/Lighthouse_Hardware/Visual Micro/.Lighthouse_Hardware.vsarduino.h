@@ -40,3 +40,5 @@ extern "C" void __cxa_pure_virtual() {}
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\System.h"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Utils.cpp"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Utils.h"
+#include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\VariableResistor.cpp"
+#include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\VariableResistor.h"

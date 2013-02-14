@@ -17,6 +17,9 @@ class Led
 	int _pin;
 	int _brightness;
 	bool _isOn;
+	bool _isFlashing;
+	int _flashingSpeed;
+	int _lastFlash;
 	String _name;
 System _system;
  public:

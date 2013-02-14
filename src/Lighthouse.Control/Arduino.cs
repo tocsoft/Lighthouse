@@ -1,67 +1,77 @@
 ﻿
 using Noesis.Javascript;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace Lighthouse.Control
 {
 
-	public class SampleDevice : Arduino
-	{
-		public SampleDevice(Guid Id)
-			: base(Id)
-		{
-			Leds = new Dictionary<string, Led>();
-			Leds.Add("RGB", Rgb = new RgbLed(this, "RGB"));
-			Leds.Add("LED1", Led1 = new Led(this, "LED1"));
-			Leds.Add("LED2", Led2 = new RgbLed(this, "LED2"));
-			//_Servo = new Servo(this);
-			Buttons = new Dictionary<string, Button>();
-			Buttons.Add("SWITCH1", Switch1 = new Button(this, "SWITCH1"));
-			Buttons.Add("BUTTON1", Button1 = new Button(this, "BUTTON1"));
-		}
-
-		public SampleDevice() : this(Guid.Empty) { }
-
-		public Led Led1 { get; private set; }
-		public Led Led2 { get; private set; }
-		public Led Rgb { get; private set; }
-
-		public Button Switch1 { get; private set; }
-		public Button Button1 { get; private set; }
-		
-		public Dictionary<string, Led> Leds { get; private set; }
-		public Dictionary<string, Button> Buttons { get; private set; }
-
-	}
+	
     public abstract class Arduino: IDisposable
     {
 		SerialPort _serialPort;
 		Guid _id;
 		Guid _reportedId;
+		bool refreshed = false;
+		List<IComponent> Components = new List<IComponent>();
+		protected void RegisterCompontent(IComponent component){
+			Components.Add(component);
+			component.PropertyChanged += component_PropertChanged;
+		}
+
 		public Arduino(Guid Id) { 
 			//connectes to devide witch specific ID
 			_id = Id;
 
-			StatusUpdate += (s, e) =>
-			{
-				if (e.Device == "SYSTEM" && e.Property == "ID")
-				{
-					_reportedId = new Guid(e.Value);
-				}
-				
-			};
-
+			StatusUpdate += Arduino_StatusUpdate;
 
 			_worker.DoWork += _worker_DoWork;
 			_worker.WorkerSupportsCancellation = true;
 			_worker.RunWorkerCompleted += _worker_RunWorkerCompleted;
+
+			_spProcessor.WorkerSupportsCancellation = true;
+			_spProcessor.DoWork += _spProcessor_DoWork;
+			_spProcessor.RunWorkerAsync();
+			Initialize();
 		}
+
+		void _spProcessor_DoWork(object sender, DoWorkEventArgs e)
+		{
+			while(!_spProcessor.CancellationPending){
+				if (_serialPort != null)
+				{
+					processFromPort(_serialPort);
+				}
+			}
+		}
+
+		void Arduino_StatusUpdate(object sender, StatusEventArgs e)
+		{
+			if (e.Device == "SYSTEM" && e.Property == "ID")
+			{
+				refreshed = true;
+				try
+				{
+					_reportedId = new Guid(e.Value);
+				}
+				catch { }
+			}
+
+			foreach (var c in Components.Where(x => x.ComponentAddress == e.Device))
+			{
+				c.UpdateProperty(e.Property, byte.Parse(e.Value));
+			}
+		}
+
+		protected abstract void Initialize();
 
 		void _worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
@@ -77,53 +87,112 @@ namespace Lighthouse.Control
 		}
 
 		BackgroundWorker _worker = new BackgroundWorker();
-		public void RunProgram(string javascript) { 
+		BackgroundWorker _spProcessor = new BackgroundWorker();
+		public void RunProgram(string code, IDebugger debugger) { 
 			//this will "program" the device with this code and have it run
-
-			_worker.RunWorkerAsync(javascript);
+			_worker.RunWorkerAsync(new Codebase {
+				Debugger = debugger,
+				Code = code
+			});
 		}
+		public void RunProgram(string code) { 
+			//this will "program" the device with this code and have it run
+			RunProgram(code, new NoOpDebugger());
+		}
+		
+		
 		public void StopProgram() {
 			_worker.CancelAsync();
+
 		}
 		public bool IsProgramRunning { get { return _worker.IsBusy; } }
+		JavascriptContext _context;
 		void _worker_DoWork(object sender, DoWorkEventArgs e)
 		{
-			var javascript = (string)e.Argument;
+			var app = (Codebase)e.Argument;
 
-			
-
-			using (JavascriptContext context = new JavascriptContext())
+			this.Refresh();
+			try
 			{
-				// Setting the externals parameters of the context
-				context.SetParameter("device", this);
 				
-				var lastRun = DateTime.Now.Ticks;
 				while (!_worker.CancellationPending)
 				{
-					var now = DateTime.Now.Ticks;
-					if((now - lastRun) > TimeSpan.TicksPerSecond * 5/*num secs*/){
-						//every 1000 times round the loop run a refresh
-						this.Refresh();
-						lastRun = now;
-					}
 
-					
-					// Running the script
-					context.Run(javascript);
-					this.Flush();
-					
+					int counter = 0;
+					using (_context = new JavascriptContext())
+					{
+						// Setting the externals parameters of the context
+						_context.SetParameter("device", this);
+						_context.SetParameter("__debugger__", app.Debugger);
+
+						//while (!_worker.CancellationPending && counter < 50000)
+						{
+							counter++;
+							_context.Run(app.Code);
+							//this.Flush();
+						}
+					}
 				}
+			}
+			catch { Console.WriteLine("Error--investigate"); }
+			_context = null;
+
+		}
+		StringBuilder _lineBuffer = new StringBuilder();
+		private void processFromPort(SerialPort sp){
+			lock (sp)
+			{
+				while(sp.BytesToRead > 0)
+				{
+
+					var c = (Char)sp.ReadChar();
+					if (c != '\n')
+					{
+						_lineBuffer.Append(c);
+					}
+					else
+					{
+						if (StatusUpdate != null)
+						{
+							var parts = _lineBuffer.ToString().Trim().Split(new char[] { ' ' }, 3, StringSplitOptions.RemoveEmptyEntries);
+							if (parts.Count() == 3)
+							{
+								StatusUpdate.Invoke(this,
+									new StatusEventArgs
+									{
+										Device = parts[0],
+										Property = parts[1],
+										Value = parts[2]
+									});
+							}
+						}
+						_lineBuffer.Clear();
+					}
+				}
+			}
+			foreach (var line in "")
+			{
+
+
 
 			}
 
+			
 		}
-
-
-
-		public void Refresh() 
+		public void Refresh()
 		{
-			SendCommand("STATUS");
-			Flush();
+			EnsureConnection();
+				refreshed = false;
+				//StreamReader sr = new StreamReader(_serialPort.BaseStream, Encoding.ASCII);
+				//_serialPort.DiscardInBuffer();
+				_serialPort.DiscardOutBuffer();
+				_serialPort.WriteLine("STATUS");
+				Thread.Sleep(10);
+				processFromPort(_serialPort);
+				//var line = sr.ReadLine();
+				
+				//_serialPort
+			
 		}
 
 		public event EventHandler<StatusEventArgs> StatusUpdate;
@@ -132,49 +201,9 @@ namespace Lighthouse.Control
 
 		void sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
 		{
+			
 			var sp = (sender as SerialPort);
-			if (e.EventType == SerialData.Chars) {
-				StringBuilder sb = new StringBuilder();
-				while (sp.IsOpen && sp.BytesToRead > 0)
-				{
-					var chr = (char)sp.ReadChar();
-					Console.Write(chr);
-					if (chr == '\n' || chr == '\r')
-					{
-						var line = sb.ToString().Trim();
-						if (line.Length > 0)
-						{
-
-							if (line.StartsWith("#"))
-							{
-								//Console.WriteLine(line);
-							}
-							else
-							{
-								if (StatusUpdate != null)
-								{
-									var parts = line.Split(new char[] { ' ' }, 3);
-									if (parts.Count() == 3)
-									{
-										StatusUpdate.Invoke(this,
-											new StatusEventArgs
-											{
-												Device = parts[0],
-												Property = parts[1],
-												Value = parts[2]
-											});
-									}
-								}
-							}
-						}
-
-						sb.Clear();
-					}
-					else { sb.Append(chr); }
-
-				}
-
-			}
+			processFromPort(sp);
 		}
 
 
@@ -195,9 +224,8 @@ namespace Lighthouse.Control
 
 					//clear buffer before opp to make sure we only recieve the right stuff back
 					
-
-					sp.WriteLine("STATUS");
-
+						sp.WriteLine("STATUS");
+					
 
 					if (_id == Guid.Empty || _reportedId == _id)
 					{
@@ -236,43 +264,61 @@ namespace Lighthouse.Control
 
 		public bool IsConnected {get{ return _serialPort != null && _serialPort.IsOpen;}}
 
-		StringBuilder cmdBuffer = new StringBuilder();
-		object cmdLocker = new object();
-		internal void SendCommand(string cmd, params object[] args)
-		{
-			args = args ?? new object[] { };
-			lock (cmdLocker)
-			{
-				var pkt = cmd + " " + string.Join(" ", args);
-				//Console.WriteLine(">" + pkt);
-				cmdBuffer.AppendLine(pkt);
 
-			}
-		}
+		//public void Flush()
+		//{
 
-		public void Flush() {
-			lock (cmdLocker)
-			{
-				if (cmdBuffer.Length > 0)
+		//	StringBuilder cmdBuffer = new StringBuilder();
+
+		//	bool propertyUpdated = false;
+		//	foreach (var comp in Components)
+		//	{
+		//		foreach (var property in comp.UpdatedProperties())
+		//		{
+		//			propertyUpdated = true;
+		//			cmdBuffer.AppendFormat("{0} {1} {2}", comp.ComponentAddress, property.Key, property.Value);
+		//			cmdBuffer.AppendLine();
+		//		}
+		//	}
+		//	if (propertyUpdated)
+		//	{
+		//		if (!IsConnected)
+		//		{
+		//			Disconnect();
+		//			Connect();
+		//			if (!IsConnected)
+		//				throw new Exception("Serial port not connected");
+		//		}
+		//		_serialPort.Write(cmdBuffer.ToString());
+		//		cmdBuffer.Clear();
+		//	}
+		//}
+		private void EnsureConnection(){
+				if (!IsConnected)
 				{
+					Disconnect();
+					Connect();
 					if (!IsConnected)
-					{
-						Disconnect();
-						Connect();
-						if (!IsConnected)
-							throw new Exception("Serial port not connected");
-					}
-					_serialPort.Write(cmdBuffer.ToString());
-					cmdBuffer.Clear();
+						throw new Exception("Serial port not connected");
 				}
-			}
 		}
-
-
+		void component_PropertChanged(object sender, PropertyChangedEventArgs e)
+		{
+			EnsureConnection();
+			var comp = sender as IComponent;
+			
+			
+				lock (_serialPort)
+				{
+					_serialPort.Write(string.Format("{0} {1} {2}", comp.ComponentAddress, e.Property, e.Value));
+				}
+				processFromPort(_serialPort);
+		}
 
 		public void Dispose()
 		{
 			Disconnect();
+			_spProcessor.CancelAsync();
 		}
 
 	}
@@ -282,185 +328,9 @@ namespace Lighthouse.Control
 		public string Property { get; set; }
 		public string Value { get; set; }
 	}
-	//public class Servo
-	//{
-	//	private Arduino _arduino;
-	//	private string _commandSet;
 
-	//	internal Servo(Arduino arduino)
-	//	{
-	//		_arduino = arduino;
-	//		//TODO to speed things up we could query full state on init and
-			
-	//	}
-
-		
-	//	public bool IsSweeping
-	//	{
-	//		get
-	//		{
-	//			var mode = _arduino.SendCommand("SERVO", "GET", "MODE");
-	//			return mode == "SWEEP";
-	//		}
-	//		set
-	//		{
-	//			_arduino.SendCommand("SERVO", "SET", "MODE", (value ? "SWEEP" : "STATIC"));
-	//		}
-	//	}
-	//	public int CurrentAngle
-	//	{
-	//		get
-	//		{
-	//			return int.Parse(_arduino.SendCommand("SERVO", "GET", "ANGLE"));
-	//		}
-	//		set
-	//		{
-	//			_arduino.SendCommand("SERVO", "SET", "ANGLE", value);
-	//		}
-	//	}
-		
-	//	public int MinAngle
-	//	{
-	//		get
-	//		{
-	//			return int.Parse(_arduino.SendCommand("SERVO", "GET", "MIN"));
-	//		}
-	//		set
-	//		{
-	//			_arduino.SendCommand("SERVO", "SET", "MIN", value);
-	//		}
-	//	}
-	//	public int MaxAngle
-	//	{
-	//		get
-	//		{
-	//			return int.Parse(_arduino.SendCommand("SERVO", "GET", "MAX"));
-	//		}
-	//		set
-	//		{
-	//			_arduino.SendCommand("SERVO", "SET", "MAX", value);
-	//		}
-	//	}
-	//	public int Speed
-	//	{
-	//		get
-	//		{
-	//			return int.Parse(_arduino.SendCommand("SERVO", "GET", "SPEED"));
-	//		}
-	//		set
-	//		{
-	//			_arduino.SendCommand("SERVO", "SET", "SPEED", value);
-	//		}
-	//	}
-	//}
-
-
-	public class Button
-	{
-		private Arduino _arduino;
-		private string _commandSet;
-		private string _device;
-
-		internal Button(Arduino arduino, string device)
-		{
-			_arduino = arduino;
-			_device = device;
-
-			_arduino.StatusUpdate += (s, e) =>
-			{
-				if (e.Device == _device &&
-				e.Property == "STATE") {
-					IsOn = (e.Value == "ON");
-
-//					Console.WriteLine("{0} - {1}",_device, IsOn);
-				}
-			};
-		}
-
-		public bool IsOn
-		{
-			get;
-			private set;
-		}
-	}
-
-	public class Led
-	{
-		private Arduino _arduino;
-		private string _deviceRef;
-
-		internal Led(Arduino arduino, string deviceRef)
-		{
-			_arduino = arduino;
-			_deviceRef = deviceRef;
-			//TODO to speed things up we could query full state on init and
-
-			_arduino.StatusUpdate += (s, e) =>
-			{
-				if (e.Device == deviceRef &&
-				e.Property == "STATE")
-				{
-					_isOn = (e.Value == "ON");
-				//	Console.WriteLine("{0} - {1}", deviceRef, _isOn);
-				}
-			};
-		}
-		bool _isOn;
-		public bool IsOn
-		{
-			get
-			{
-				return _isOn;
-			}
-			set
-			{
-				if (_isOn != value)
-				{
-					_isOn = value;
-					_arduino.SendCommand(_deviceRef, "STATE", (value ? "ON" : "OFF"));
-				}
-			}
-		}
-	}
-	public class RgbLed : Led
-	{
-		private Arduino _arduino;
-		private string _device;
-		internal RgbLed(Arduino arduino, string device)
-			: base(arduino, device)
-		{
-			_arduino = arduino;
-			_device = device;
-			//TODO to speed things up we could query full state on init and
-			_arduino.StatusUpdate += (s, e) =>
-			{
-				if (e.Device == _device &&
-				e.Property == "COLOR")
-				{
-					var parts = e.Value.Split(' ');
-					int red = int.Parse(parts[0]);
-					int green = int.Parse(parts[1]);
-					int blue = int.Parse(parts[2]);
-					_Color = Color.FromArgb(red, green, blue); 
-				} 
-			};
-		}
-
-		Color _Color;
-		public Color Color
-		{
-			get
-			{
-				return _Color;
-			}
-			set
-			{
-				if (_Color != value)
-				{
-					_Color = value;
-					_arduino.SendCommand(_device, "COLOR", value.R, value.G, value.B);
-				}
-			}
-		}
+	internal class Codebase {
+		public IDebugger Debugger { get; set; }
+		public string Code { get; set; }
 	}
 }

@@ -5,13 +5,25 @@
 
     
   <script type="text/javascript" src="blockly_compressed.js"></script>
+
   <script type="text/javascript" src="generators/javascript.js"></script>
   <script type="text/javascript" src="generators/javascript/control.js"></script>
   <script type="text/javascript" src="generators/javascript/colour.js"></script>
   <script type="text/javascript" src="generators/javascript/logic.js"></script>
   <script type="text/javascript" src="generators/javascript/variables.js"></script>
   <script type="text/javascript" src="generators/javascript/procedures.js"></script>
+
+    
+  <script type="text/javascript" src="generators/csharp.js"></script>
+  <script type="text/javascript" src="generators/csharp/control.js"></script>
+  <script type="text/javascript" src="generators/csharp/colour.js"></script>
+  <script type="text/javascript" src="generators/csharp/logic.js"></script>
+  <script type="text/javascript" src="generators/csharp/variables.js"></script>
+  <script type="text/javascript" src="generators/csharp/procedures.js"></script>
+
   <script type="text/javascript" src="lighthouse_lang.js"></script>
+<script type="text/javascript" src="lighthouse_javascript.js"></script>
+<script type="text/javascript" src="lighthouse_csharp.js"></script>
 
   <script type="text/javascript" src="language/en/_messages.js"></script>
   <script type="text/javascript" src="language/common/control.js"></script>
@@ -51,6 +63,14 @@
         <block type="logic_boolean"></block>
         <block type="logic_negate"></block>
       </category>
+
+      <category name="Colour">
+        <block type="colour_picker"></block>
+        <block type="colour_rgb"></block>
+        <block type="colour_blend"></block>
+      </category>
+
+    
     <category name="Lighthouse">
         <block type="button_isOn"></block>
         <block type="led_turnOn"></block>
@@ -64,19 +84,35 @@
           { path: './', toolbox: document.getElementById('toolbox') });
 
       // window.parent.blocklyLoaded(Blockly);
+      
+      function highlight(id) {
 
-      function getCode() {
-          return Blockly.Generator.workspaceToCode('JavaScript');
-      }
+          Blockly.mainWorkspace.getBlockById(id).select();
 
-      function getXml() {
-          var xml = Blockly.Xml.workspaceToDom(Blockly.mainWorkspace);
-          return Blockly.Xml.domToPrettyText(xml);
+          return id;
       }
-      function loadXml(xmlString) {
-          var xml = Blockly.Xml.textToDom(xmlString);
-          Blockly.Xml.domToWorkspace(Blockly.mainWorkspace, xml);
-      }
+      Blockly.Generator.get('JavaScript').DEBUGGER_CODE_ENTER = "__debugger__.Enter(%ID%);\n";
+      Blockly.Generator.get('JavaScript').DEBUGGER_CODE_EXIT = "__debugger__.Exit(%ID%);\n";
+          function getCode() {
+              return Blockly.Generator.workspaceToCode('JavaScript');
+          }
+
+          Blockly.Generator.get('CSharp').DEBUGGER_CODE_ENTER = "__debugger__.Enter(%ID%);\n";
+          Blockly.Generator.get('CSharp').DEBUGGER_CODE_EXIT = "__debugger__.Exit(%ID%);\n";
+
+          function getCodeCSharp() {
+              return Blockly.Generator.workspaceToCode('CSharp');
+          }
+
+
+          function getXml() {
+              var xml = Blockly.Xml.workspaceToDom(Blockly.mainWorkspace);
+              return Blockly.Xml.domToPrettyText(xml);
+          }
+          function loadXml(xmlString) {
+              var xml = Blockly.Xml.textToDom(xmlString);
+              Blockly.Xml.domToWorkspace(Blockly.mainWorkspace, xml);
+          }
   </script>
 
 </body>

@@ -6,12 +6,15 @@
 #include "Button.h"
 #include "Rgb.h"
 #include "Led.h"
+#include "VariableResistor.h"
 
 Button switch1;
 Button button1;
 Led led1;
 Led led2;
 Rgb rgb;
+VariableResistor pot;
+VariableResistor ldr;
 
 void System::init(String id)
 {
@@ -22,6 +25,8 @@ void System::init(String id)
 	led1.init(*this, 4, "LED1");
 	led2.init(*this, 1, "LED2");
 	rgb.init(*this,3,5,6, "RGB");
+	pot.init(*this, 0, 5, 0, 1023, "KNOB");
+	ldr.init(*this, 1, 10, 135, 955, "LIGHT");
 	_id = id;
 }
 bool _requiresSendStatus = true;;
@@ -73,7 +78,8 @@ void System::loop()
 				rgb.recieveCommand(device, prop, value);
 				led1.recieveCommand(device, prop, value);
 				led2.recieveCommand(device, prop, value);
-
+				pot.recieveCommand(device, prop, value);
+				ldr.recieveCommand(device, prop, value);
 				if(device == "STATUS"){
 					
 					sendStatus();
@@ -89,6 +95,8 @@ void System::loop()
 	rgb.loop();
 	led1.loop();
 	led2.loop();
+	pot.loop();
+	ldr.loop();
 	/*
 	if(_requiresSendStatus){
 		
@@ -112,6 +120,8 @@ void System::sendStatus()
 		rgb.sendStatus();
 		led1.sendStatus();
 		led2.sendStatus();
+		pot.sendStatus();
+		ldr.sendStatus();
 
 		Serial.print("SYSTEM ID ");
 		Serial.println(_id);

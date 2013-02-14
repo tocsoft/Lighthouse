@@ -78,6 +78,7 @@
     <ClInclude Include="Rgb.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="VariableResistor.h" />
     <ClInclude Include="Visual Micro\.Lighthouse_Hardware.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +87,7 @@
     <ClCompile Include="Rgb.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="VariableResistor.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

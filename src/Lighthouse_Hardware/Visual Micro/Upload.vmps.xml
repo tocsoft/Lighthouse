@@ -1,5 +1,5 @@
 <VisualMicro>
-  <Program Ext=".ino" Name="Lighthouse_Hardware" Location="C:\Users\scottw\Documents\Visual Studio 2012\Projects\Lighthouse\Lighthouse_Hardware">
+  <Program Ext=".ino" Name="Lighthouse_Hardware" Location="C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware">
     <Compile CompilerErrors="0" ConfigurationName="Debug" StopOnError="False" OptimiseLibs="True" OptimiseCore="True" BuildPath="C:\Users\scottw\AppData\Local\VMicro\Arduino\Builds\Lighthouse_Hardware\leonardo" IncludeDebug="0" IncludesDebug="0" SketchName="Lighthouse_Hardware" IsCompiled="1" />
     <Debug />
     <Platform Name="Arduino">
