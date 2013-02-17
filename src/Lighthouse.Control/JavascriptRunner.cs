@@ -13,12 +13,13 @@ namespace Lighthouse.Control
 		BackgroundWorker _worker = new BackgroundWorker();
 		private IDebugger _debugger;
 		private string _code;
+		private IDevice _arduino;
+		public IDevice Device { get { return _arduino; } set { _arduino = value; } }
 
-		public JavascriptRunner(Arduino arduino, IDebugger debugger) {
+		public JavascriptRunner(IDebugger debugger) {
 			_debugger = debugger;
 			_worker.DoWork += _worker_DoWork;
 			_worker.RunWorkerCompleted += _worker_RunWorkerCompleted;
-			_arduino = arduino;
 		}
 
 		void _worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -32,10 +33,11 @@ namespace Lighthouse.Control
 			var system = new SystemUtilities(this);
 			var debugger = new Debugger(_debugger, this);
 
-			while (!_stop)
+			//while (!_stop)
 			{
 				using (_context = new JavascriptContext())
 				{
+
 					// Setting the externals parameters of the context
 					_context.SetParameter("device", _arduino);
 					_context.SetParameter("system", system);
@@ -57,7 +59,6 @@ namespace Lighthouse.Control
 		public bool IsRunning { get { return _worker.IsBusy; } }
 
 		public event EventHandler Stopped;
-		private Arduino _arduino;
 
 		public void Run(string code)
 		{

@@ -32,6 +32,8 @@ extern "C" void __cxa_pure_virtual() {}
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Lighthouse_Hardware.ino"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Button.cpp"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Button.h"
+#include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Buzzer.cpp"
+#include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Buzzer.h"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Led.cpp"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Led.h"
 #include "C:\Projects\Scott\LighthouseProject\src\Lighthouse_Hardware\Rgb.cpp"

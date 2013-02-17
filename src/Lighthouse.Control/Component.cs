@@ -12,10 +12,12 @@ namespace Lighthouse.Control
 		/// <summary>
 		/// this hardware name for this component
 		/// </summary>
-		string ComponentAddress { get; }
+		string ComponentName { get; }
+		byte ComponentAddress { get; }
 		event EventHandler<PropertyChangedEventArgs> PropertyChanged;
+		event EventHandler<PropertyChangedEventArgs> PropertySet;
 
-		void UpdateProperty(string propertyReference, byte value);
+		void UpdateProperty(byte propertyReference, byte value);
 
 		/// <summary>
 		/// this returns any property updates that still are to be flushed to the device
@@ -23,19 +25,25 @@ namespace Lighthouse.Control
 		/// <param name="propertyReference"></param>
 		/// <param name="values"></param>
 		/// <returns></returns>
-		IDictionary<string, byte> UpdatedProperties();
+		IDictionary<byte, byte> UpdatedProperties();
 	}
 
 	public abstract class BaseComponent : IComponent
 	{
-		string _componentAddress;
+		string _componentName;
+		byte _componentAddress;
 
-		ConcurrentDictionary<string, byte> localProperties = new ConcurrentDictionary<string, byte>();
-		ConcurrentDictionary<string, byte> deviceProperties = new ConcurrentDictionary<string, byte>();
+		ConcurrentDictionary<byte, byte> localProperties = new ConcurrentDictionary<byte, byte>();
+		ConcurrentDictionary<byte, byte> deviceProperties = new ConcurrentDictionary<byte, byte>();
 
-		string IComponent.ComponentAddress
+		byte IComponent.ComponentAddress
 		{
 			get { return _componentAddress; }
+		}
+
+		public string ComponentName
+		{
+			get { return _componentName; }
 		}
 		public EventHandler<PropertyChangedEventArgs> PropertyChanged;
 
@@ -45,66 +53,78 @@ namespace Lighthouse.Control
 			remove { PropertyChanged -= value; }
 		}
 
-		public BaseComponent(string componentAddress) {
 
+		public EventHandler<PropertyChangedEventArgs> PropertySet;
+
+		event EventHandler<PropertyChangedEventArgs> IComponent.PropertySet
+		{
+			add { PropertySet += value; }
+			remove { PropertySet -= value; }
+		}
+
+		public BaseComponent(byte componentAddress, string componentName)
+		{
+			_componentName = componentName;
 			_componentAddress = componentAddress;
 		}
 
-		protected byte Get(string prop){
-
-			if (localProperties.ContainsKey(prop))
+		protected byte Get(byte prop)
+		{
+			byte tmp = 0;
+			if (localProperties.TryGetValue(prop, out tmp))
 			{
-				return localProperties[prop];
+				return tmp;
 			}
-			else if (deviceProperties.ContainsKey(prop))
+			else if (deviceProperties.TryGetValue(prop, out tmp))
 			{
-				return deviceProperties[prop];
+				return tmp;
 			}
-			else {
+			else
+			{
 				return default(byte);
 			}
 				
 		}
 
-		protected void Set(string prop, byte val)
+		protected void Set(byte prop, byte val)
 		{
 
 			byte tmp;
-			if (deviceProperties.ContainsKey(prop))
-			{
-				if (deviceProperties[prop] == val)
-				{
-					localProperties.TryRemove(prop, out tmp);
-					return;
-				}
-			}
 
-			if (!localProperties.ContainsKey(prop) || localProperties[prop] != val)
+			if (deviceProperties.TryGetValue(prop, out tmp) && tmp == val)
+			{
+				localProperties.TryRemove(prop, out tmp);
+				return;
+			}
+			if (!localProperties.TryGetValue(prop, out tmp) || tmp != val)
 			{
 				localProperties.AddOrUpdate(prop, val, (c, d) =>
 				{
 					return val;
 				});
+				if (PropertySet != null)
+					PropertySet.Invoke(this, new PropertyChangedEventArgs(prop, val));
 				if (PropertyChanged != null)
 					PropertyChanged.Invoke(this, new PropertyChangedEventArgs(prop, val));
 			}
-
-
 		}
 
-		void IComponent.UpdateProperty(string propertyReference, byte value)
+		void IComponent.UpdateProperty(byte prop, byte val)
 		{
 			byte tmp;
-			localProperties.TryRemove(propertyReference, out tmp);
-			deviceProperties.AddOrUpdate(propertyReference, value, (c, d) => value);
+			localProperties.TryRemove(prop, out tmp);
+
+			if (!deviceProperties.TryGetValue(prop, out tmp) || tmp != val)
+			{
+				deviceProperties.AddOrUpdate(prop, val, (c, d) => val);
+				if (PropertyChanged != null)
+					PropertyChanged.Invoke(this, new PropertyChangedEventArgs(prop, val));
+			}
 		}
 
-
-
-
-		IDictionary<string, byte> IComponent.UpdatedProperties()
+		IDictionary<byte, byte> IComponent.UpdatedProperties()
 		{
-			Dictionary<string, byte> buffer = new Dictionary<string,byte>();
+			Dictionary<byte, byte> buffer = new Dictionary<byte, byte>();
 			byte tmp;
 			foreach (var prop in localProperties) {
 				deviceProperties.AddOrUpdate(prop.Key, prop.Value, (c, d) => prop.Value);
@@ -121,9 +141,10 @@ namespace Lighthouse.Control
 
 	public class PropertyChangedEventArgs : EventArgs
 	{
-		public string Property { get; private set; }
+		public byte Property { get; private set; }
 		public byte Value { get; private set; }
-		public PropertyChangedEventArgs(string property, byte value) {
+		public PropertyChangedEventArgs(byte property, byte value)
+		{
 			Property = property;
 			Value = value;
 		}

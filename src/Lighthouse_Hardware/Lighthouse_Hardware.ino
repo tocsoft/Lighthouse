@@ -1,4 +1,5 @@
 
+#include "Buzzer.h"
 #include "VariableResistor.h"
 #include "Led.h"
 #include "Utils.h"

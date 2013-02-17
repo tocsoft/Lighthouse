@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -32,6 +32,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CefSharp">
+      <HintPath>..\CefSharp\CefSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="CefSharp.WinForms">
+      <HintPath>..\CefSharp\CefSharp.WinForms.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -42,14 +48,33 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Xilium.CefGlue">
-      <HintPath>..\xilium.cefglue\CefGlue\bin\Debug\Xilium.CefGlue.dll</HintPath>
-    </Reference>
-    <Reference Include="Xilium.CefGlue.WindowsForms">
-      <HintPath>..\xilium.cefglue\CefGlue.WindowsForms\bin\Debug\Xilium.CefGlue.WindowsForms.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="blockly\Editor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="blockly\Editor.Designer.cs">
+      <DependentUpon>Editor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Device\RangeWithCheckbox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Device\RangeWithCheckbox.Designer.cs">
+      <DependentUpon>RangeWithCheckbox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Device\DevicePreview.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Device\DevicePreview.Designer.cs">
+      <DependentUpon>DevicePreview.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Device\RangeWithLabel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Device\RangeWithLabel.Designer.cs">
+      <DependentUpon>RangeWithLabel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Device\SimpleDevice.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -58,6 +83,18 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="blockly\Editor.resx">
+      <DependentUpon>Editor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Device\RangeWithCheckbox.resx">
+      <DependentUpon>RangeWithCheckbox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Device\DevicePreview.resx">
+      <DependentUpon>DevicePreview.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Device\RangeWithLabel.resx">
+      <DependentUpon>RangeWithLabel.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -70,6 +107,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="App.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -79,6 +117,60 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="blockly\blockly_compressed.js" />
+    <EmbeddedResource Include="blockly\editor.html" />
+    <EmbeddedResource Include="blockly\generators\csharp.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\colour.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\control.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\lists.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\logic.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\math.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\procedures.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\text.js" />
+    <EmbeddedResource Include="blockly\generators\csharp\variables.js" />
+    <EmbeddedResource Include="blockly\generators\javascript.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\colour.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\control.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\lists.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\logic.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\math.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\procedures.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\text.js" />
+    <EmbeddedResource Include="blockly\generators\javascript\variables.js" />
+    <EmbeddedResource Include="blockly\language\common\colour.js" />
+    <EmbeddedResource Include="blockly\language\common\control.js" />
+    <EmbeddedResource Include="blockly\language\common\lists.js" />
+    <EmbeddedResource Include="blockly\language\common\logic.js" />
+    <EmbeddedResource Include="blockly\language\common\math.js" />
+    <EmbeddedResource Include="blockly\language\common\procedures.js" />
+    <EmbeddedResource Include="blockly\language\common\text.js" />
+    <EmbeddedResource Include="blockly\language\common\variables.js" />
+    <EmbeddedResource Include="blockly\language\en\_messages.js" />
+    <EmbeddedResource Include="blockly\lighthouse_csharp.js" />
+    <EmbeddedResource Include="blockly\lighthouse_javascript.js" />
+    <EmbeddedResource Include="blockly\lighthouse_lang.js" />
+    <EmbeddedResource Include="blockly\media\1x1.gif" />
+    <EmbeddedResource Include="blockly\media\blockly.css" />
+    <EmbeddedResource Include="blockly\media\click.wav" />
+    <EmbeddedResource Include="blockly\media\delete.wav" />
+    <EmbeddedResource Include="blockly\media\handclosed.cur" />
+    <EmbeddedResource Include="blockly\media\handopen.cur" />
+    <EmbeddedResource Include="blockly\media\quote0.png" />
+    <EmbeddedResource Include="blockly\media\quote1.png" />
+    <EmbeddedResource Include="blockly\media\trashbody.png" />
+    <EmbeddedResource Include="blockly\media\trashlid.png" />
+    <EmbeddedResource Include="blockly\media\tree.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="blockly\host.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lighthouse.Control\Lighthouse.Control.csproj">
+      <Project>{2aad04ef-1792-4206-9996-d757fa35b10b}</Project>
+      <Name>Lighthouse.Control</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,0 +1,114 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Blockly Demo: Code</title>
+    <style> html, body {
+      background-color: #fff;
+      margin: 0;
+      padding:0;
+      overflow: hidden;
+    }</style>
+   <script>
+       var Editor = null;
+       function editorReady(blockly) {
+           Editor = blockly;
+           editorsSetup();
+       }
+
+       var Debugger = null;
+       var waitingToRun = false;
+       function debuggerReady(blockly) {
+           Debugger = blockly;
+           editorsSetup();
+
+           if (setupComplete) {
+               //load in the xml from the current editor and call
+               if (waitingToRun) {
+                   waitingToRun = false;
+                   sync();
+                   document.getElementById('editor_frame').style.display = "none";
+                   document.getElementById('debugger_frame').style.display = "block";
+
+                   app.run(Debugger.Generator.workspaceToCode('JavaScript'));
+
+                   hightlighterTo = setInterval(function () {
+                       highlight(app.highlighted());
+                   }, 100);
+               }
+           }
+       }
+       
+       var setupComplete = false;
+       function editorsSetup() {
+           if (!setupComplete) {
+               if (Debugger && Editor) {
+
+
+
+                   var xmlString = app.getXml();
+                   var xml = Editor.Xml.textToDom(xmlString);
+
+                   Editor.Xml.domToWorkspace(Editor.mainWorkspace, xml);
+                   Debugger.Xml.domToWorkspace(Debugger.mainWorkspace, xml);
+                   ////load up Xml
+
+                   setupComplete = true;
+                   app.setupComplete();
+                   stop();
+
+
+               }
+           }
+       }
+
+       var hightlighterTo;
+       function run() {
+           waitingToRun = true;
+           var iframe = document.getElementById('debugger_frame');
+           iframe.contentWindow.location.reload()
+       }
+
+       function sync() {
+           var xml = Editor.Xml.workspaceToDom(Editor.mainWorkspace);
+
+           //clear workspace of Debugger here
+           var blocks= Debugger.mainWorkspace.topBlocks_;
+           for (var i = 0; i < blocks.length; i++)
+           {   
+               Debugger.mainWorkspace.removeTopBlock(blocks[i]);
+           }
+           
+           //Debugger.mainWorkspace.removeChildren()
+           Debugger.Xml.domToWorkspace(Debugger.mainWorkspace, xml);
+
+       }
+
+       function stop() {
+           document.getElementById('editor_frame').style.display = "block";
+           document.getElementById('debugger_frame').style.display = "none";
+           clearInterval(hightlighterTo);
+       }
+
+       setInterval(function () {
+           var xml = Editor.Xml.workspaceToDom(Editor.mainWorkspace);
+           var xmlString = Editor.Xml.domToPrettyText(xml);
+           app.updateXml(xmlString);
+       }, 500);
+
+
+
+       function highlight(id) {
+
+           Debugger.mainWorkspace.getBlockById(id).select();
+
+           return id;
+       }
+
+   </script>
+
+</head>
+<body>
+    <iframe src="editor.html?mode=editor" id="editor_frame" style="display:none; width:100%; height:100%" frameBorder="0"></iframe>
+    <iframe src="editor.html?mode=debugger" id="debugger_frame" style="display:none; width:100%; height:100%" frameBorder="0"></iframe>
+</body>
+</html>

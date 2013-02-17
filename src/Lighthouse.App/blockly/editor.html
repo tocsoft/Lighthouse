@@ -1,0 +1,143 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Blockly Demo: Code</title>
+
+    
+  <script type="text/javascript" src="blockly_compressed.js"></script>
+
+  <script type="text/javascript" src="generators/javascript.js"></script>
+  <script type="text/javascript" src="generators/javascript/control.js"></script>
+  <script type="text/javascript" src="generators/javascript/colour.js"></script>
+  <script type="text/javascript" src="generators/javascript/logic.js"></script>
+  <script type="text/javascript" src="generators/javascript/variables.js"></script>
+  <script type="text/javascript" src="generators/javascript/math.js"></script>
+  <script type="text/javascript" src="generators/javascript/procedures.js"></script>
+
+    
+  <script type="text/javascript" src="generators/csharp.js"></script>
+  <script type="text/javascript" src="generators/csharp/control.js"></script>
+  <script type="text/javascript" src="generators/csharp/colour.js"></script>
+  <script type="text/javascript" src="generators/csharp/logic.js"></script>
+  <script type="text/javascript" src="generators/csharp/variables.js"></script>
+  <script type="text/javascript" src="generators/csharp/math.js"></script>
+  <script type="text/javascript" src="generators/csharp/procedures.js"></script>
+
+  <script type="text/javascript" src="lighthouse_lang.js"></script>
+<script type="text/javascript" src="lighthouse_javascript.js"></script>
+<script type="text/javascript" src="lighthouse_csharp.js"></script>
+
+  <script type="text/javascript" src="language/en/_messages.js"></script>
+  <script type="text/javascript" src="language/common/control.js"></script>
+  <script type="text/javascript" src="language/common/colour.js"></script>
+  <script type="text/javascript" src="language/common/logic.js"></script>
+  <script type="text/javascript" src="language/common/variables.js"></script>
+  <script type="text/javascript" src="language/common/math.js"></script>
+  <script type="text/javascript" src="language/common/procedures.js"></script>
+
+
+  <style>
+    html, body {
+      background-color: #fff;
+      margin: 0;
+      padding:0;
+      overflow: hidden;
+    }
+    .blocklySvg {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  
+
+</head>
+<body>
+    <div id="viewer" />
+    <div id="editor" />
+<xml id="toolbox" style="display: none">
+  
+      <category name="Control">
+        <block type="controls_if"></block>
+          
+        <block type="repeat_forever"></block>
+        <block type="controls_repeat"></block>
+        <block type="controls_whileUntil"></block>
+      </category>
+      <category name="Logic">
+        <block type="logic_compare"></block>
+        <block type="logic_operation"></block>
+        <block type="logic_boolean"></block>
+        <block type="logic_negate"></block>
+        <block type="math_number"></block>
+      </category>
+
+     <!-- <category name="Colour">
+        <block type="colour_picker"></block>
+        <block type="colour_rgb"></block>
+        <block type="colour_blend"></block>
+      </category>-->
+
+    <category name="Actions">
+        <block type="system_sleep"></block>
+        <block type="led_turnOn"></block>
+        <block type="buzzer_turnOn"></block>
+        <block type="buzzer_setTone"></block>
+    </category>
+    <category name="Inputs">
+        <block type="button_isOn"></block>
+        <block type="variableinput_value"></block>
+    </category>
+
+</xml>
+  <script type="text/javascript">
+
+      var is_editor = (window.location.href.split('?')[1] == "mode=editor")
+
+
+
+      Blockly.inject(document.getElementById('editor'),
+                  { path: './', toolbox: document.getElementById('toolbox'), readOnly : !is_editor});
+
+
+      if(is_editor)
+          window.parent.editorReady(Blockly);
+      else
+          window.parent.debuggerReady(Blockly);
+
+
+        
+
+      // window.parent.blocklyLoaded(Blockly);
+      function disableEditing() {
+          setEditing(false);
+      }
+      function enableEditing() {
+          setEditing(true);
+      }
+      function setEditing(state) {
+          var all = Blockly.mainWorkspace.getAllBlocks();
+          for (var i = 0; i < all.length; i++) {
+              var current = all[i];
+
+          }
+      }
+      
+        
+          Blockly.Generator.get('CSharp').DEBUGGER_CODE_ENTER = "__debugger__.Enter(%ID%);\n";
+          Blockly.Generator.get('CSharp').DEBUGGER_CODE_EXIT = "__debugger__.Exit(%ID%);\n";
+
+          function getCodeCSharp() {
+              return Blockly.Generator.workspaceToCode('CSharp');
+          }
+
+
+          function getXml() {
+              
+          }
+          function loadXml(xmlString) {
+           
+          }
+  </script>
+
+</body>
+</html>

@@ -3,9 +3,8 @@
 // 
 
 #include "Led.h"
-#include "Utils.h"
 
-void Led::init(System &system, int pin, String name)
+void Led::init(System &system, int pin, uint8_t name)
 {
 	_system = system;
 	_pin = pin;
@@ -23,57 +22,31 @@ void Led::init(System &system, int pin, String name)
 
 void Led::sendStatus()
 {
-	//state
-	Serial.print(_name);
-	Serial.print(" ON ");
 	if(_isOn){
-		Serial.println("1");
+		_system.sendPacket(_name, 0x01, 0x01);
 	}else{
-		Serial.println("0");
+		_system.sendPacket(_name, 0x01, 0x00);
 	}
-
-	Serial.print(_name);
-	Serial.print(" FLASH ");
-	if(_isFlashing){
-		Serial.println("1");
-	}else{
-		Serial.println("0");
-	}
-	Serial.print(_name);
-	Serial.print(" FLASH_SPEED ");
-	Serial.println(_flashingSpeed);
 }
 
-void Led::recieveCommand(String name, String prop, String value){
+void Led::recieveCommand(uint8_t name, uint8_t prop, byte value){
 	if(name==_name){
-		if( prop == "ON"){
-		_isOn = value == "1";
-		}else if( prop == "FLASH"){
-		_isFlashing = value == "1";
-		if(_isFlashing)
-			_isOn = true;
-		}else if( prop == "FLASH_SPEED"){
-			_flashingSpeed = UTILS.stringToInt(value);
+		if(prop == 0x01){
+			_isOn = (value == 0x01);
 		}
-
 		sendStatus();
 	}
 }
 
 void Led::loop(){
-		if(_isFlashing){
-			int n =  millis();
-			if((n - _lastFlash) > (_flashingSpeed * 50))
-			{
-				_lastFlash = n;
-				_isOn = !_isOn;
-				sendStatus();
-			}
-		}
-
+		
 		if(_isOn){
+		
+
 				digitalWrite(_pin, HIGH);
 			}else{
+				
+
 				 digitalWrite(_pin, LOW);
 			}
 }

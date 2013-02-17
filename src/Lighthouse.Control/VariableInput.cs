@@ -7,11 +7,14 @@ namespace Lighthouse.Control
 {
 	public class VariableInput : BaseComponent
 	{
-		public VariableInput(string componentAddress) : base(componentAddress) { }
+		public VariableInput(byte componentAddress, string componentName) : base(componentAddress, componentName) { }
 
-		public byte Value {
+		public int Value {
 			get {
-				return Get("VALUE");
+				return Get(0x11);
+			}
+			set {
+				Set(0x11, (byte)value);
 			}
 		}
 	}

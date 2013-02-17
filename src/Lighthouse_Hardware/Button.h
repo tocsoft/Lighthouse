@@ -17,13 +17,13 @@ class Button
 	bool _isTest1;
 	bool _isTest2;
 	bool _isOn;
-	String _name;
+	uint8_t _name;
 System _system;
  public:
 	void loop();
 	void sendStatus();
-	void init(System &system, int pin, String name);
-	void recieveCommand(String name, String prop, String value);
+	void init(System &system, int pin, uint8_t name);
+	void recieveCommand(uint8_t name, uint8_t prop, uint8_t value);
 };
 
 extern Button BUTTON;

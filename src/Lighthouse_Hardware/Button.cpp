@@ -4,7 +4,7 @@
 
 #include "Button.h"
 
-void Button::init(System &system, int pin, String name)
+void Button::init(System &system, int pin, uint8_t name)
 {
 	_system = system;
 	_pin = pin;
@@ -19,24 +19,25 @@ void Button::init(System &system, int pin, String name)
 
 void Button::sendStatus()
 {
-	Serial.print(_name);
-	Serial.print(" ON ");
-	if(!_isOn){
-		Serial.println("1");
+	if(_isOn){
+		_system.sendPacket(_name, 0x01, 0x01);
 	}else{
-		Serial.println("0");
+		_system.sendPacket(_name, 0x01, 0x00);
 	}
 }
 
 void Button::loop(){
+	
+	
+
 	if(millis() % 10 == 0){
 		//make a check
 		_isTest1 = _isTest2;
 		_isTest2 = digitalRead(_pin);
 		if(_isTest1 == _isTest2){
 		bool newState = _isTest1;
-			if(_isOn != newState){
-				_isOn = newState;
+			if(_isOn == newState){
+				_isOn = !newState;
 				sendStatus();
 			}
 		}
@@ -44,7 +45,7 @@ void Button::loop(){
 	}
 }
 
-void Button::recieveCommand(String name, String prop, String value){
+void Button::recieveCommand(uint8_t name, uint8_t prop, uint8_t value){
 	if(name == _name){
 		sendStatus();
 	}

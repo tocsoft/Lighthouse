@@ -20,13 +20,13 @@ class Led
 	bool _isFlashing;
 	int _flashingSpeed;
 	int _lastFlash;
-	String _name;
+	uint8_t _name;
 System _system;
  public:
 	void loop();
 	void sendStatus();
-	void init(System &system, int pin, String name);
-	void recieveCommand(String name, String prop, String value);
+	void init(System &system, int pin, uint8_t name);
+	void recieveCommand(uint8_t name, uint8_t prop, byte value);
 };
 
 extern Led LED;

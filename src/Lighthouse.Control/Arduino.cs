@@ -22,16 +22,20 @@ namespace Lighthouse.Control
 		Guid _reportedId;
 		bool refreshed = false;
 		List<IComponent> Components = new List<IComponent>();
+		public event EventHandler ComponentAdded;
+
 		protected void RegisterCompontent(IComponent component){
 			Components.Add(component);
-			component.PropertyChanged += component_PropertChanged;
+			component.PropertySet += component_PropertChanged;
+			if (ComponentAdded != null)
+				ComponentAdded.Invoke(this, new EventArgs());
+
 		}
 
 		public Arduino(Guid Id) { 
 			//connectes to devide witch specific ID
 			_id = Id;
 
-			StatusUpdate += Arduino_StatusUpdate;
 			_spProcessor.WorkerSupportsCancellation = true;
 			_spProcessor.DoWork += _spProcessor_DoWork;
 			_spProcessor.RunWorkerAsync();
@@ -41,30 +45,12 @@ namespace Lighthouse.Control
 		void _spProcessor_DoWork(object sender, DoWorkEventArgs e)
 		{
 			while(!_spProcessor.CancellationPending){
-				if (_serialPort != null)
-				{
+				
 					processFromPort(_serialPort);
-				}
+				
 			}
 		}
 
-		void Arduino_StatusUpdate(object sender, StatusEventArgs e)
-		{
-			if (e.Device == "SYSTEM" && e.Property == "ID")
-			{
-				refreshed = true;
-				try
-				{
-					_reportedId = new Guid(e.Value);
-				}
-				catch { }
-			}
-
-			foreach (var c in Components.Where(x => x.ComponentAddress == e.Device))
-			{
-				c.UpdateProperty(e.Property, byte.Parse(e.Value));
-			}
-		}
 
 		protected abstract void Initialize();
 
@@ -76,75 +62,69 @@ namespace Lighthouse.Control
 		}
 
 		BackgroundWorker _spProcessor = new BackgroundWorker();
-		
-		
-		StringBuilder _lineBuffer = new StringBuilder();
-		private void processFromPort(SerialPort sp){
-			lock (sp)
-			{
-				while(sp.BytesToRead > 0)
-				{
 
-					var c = (Char)sp.ReadChar();
-					if (c != '\n')
+		object readSpLock = new object();
+		private void processFromPort(SerialPort sp)
+		{
+			if (sp != null && sp.IsOpen)
+				if (sp != null && sp.IsOpen)
+					lock (readSpLock)
 					{
-						_lineBuffer.Append(c);
-					}
-					else
-					{
-						if (StatusUpdate != null)
+						if (sp.BytesToRead < 5)
+							return;
+						//this will block until a 0x06 is found or buffer size becomes less then 3.
+						while (sp.ReadByte() != 0x06)
 						{
-							var parts = _lineBuffer.ToString().Trim().Split(new char[] { ' ' }, 3, StringSplitOptions.RemoveEmptyEntries);
-							if (parts.Count() == 3)
+							//This will trash any preamble junk in the serial buffer
+							//but we need to make sure there is enough in the buffer to process while we trash the rest
+							//if the buffer becomes too empty, we will escape and try again on the next call
+							if (sp.BytesToRead < 5)
+								return;
+						}
+						
+
+						byte componentAddress = (byte)sp.ReadByte();
+						byte propertyAddress = (byte)sp.ReadByte();
+						byte value = (byte)sp.ReadByte();
+
+						int cs = sp.ReadByte();
+
+						byte calc_CS = 0;
+						calc_CS ^= componentAddress;
+						calc_CS ^= propertyAddress;
+						calc_CS ^= value;
+
+						if (cs == calc_CS)
+						{
+							//recieved correctly 
+							//send update
+							var comps = Components.Where(x => x.ComponentAddress == componentAddress);
+							foreach (var c in comps)
 							{
-								StatusUpdate.Invoke(this,
-									new StatusEventArgs
-									{
-										Device = parts[0],
-										Property = parts[1],
-										Value = parts[2]
-									});
+								c.UpdateProperty(propertyAddress, value);
+							}
+							if (!comps.Any()) {
+								UnknownDevice(componentAddress, propertyAddress, value);
 							}
 						}
-						_lineBuffer.Clear();
 					}
-				}
-			}
-			foreach (var line in "")
-			{
-
-
-
-			}
-
-			
 		}
+
+		protected abstract void UnknownDevice(byte componentAddress, byte propertyAddress, byte value);
+		
 		public void Refresh()
 		{
-			EnsureConnection();
-				refreshed = false;
-				//StreamReader sr = new StreamReader(_serialPort.BaseStream, Encoding.ASCII);
-				//_serialPort.DiscardInBuffer();
-				_serialPort.DiscardOutBuffer();
-				_serialPort.WriteLine("STATUS");
-				Thread.Sleep(10);
-				processFromPort(_serialPort);
-				//var line = sr.ReadLine();
+			if (EnsureConnection())
+			{
+
+				SendCmd(0x01, 0x01, 0x01);
+
 				
-				//_serialPort
+			}
 			
 		}
 
 		public event EventHandler<StatusEventArgs> StatusUpdate;
-
-
-		void sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
-		{
-			
-			var sp = (sender as SerialPort);
-			processFromPort(sp);
-		}
-
 
 		public void Connect() {
 
@@ -157,15 +137,11 @@ namespace Lighthouse.Control
 				{
 					_reportedId = Guid.Empty;
 					sp = new SerialPort(port, 57600);
-					sp.DataReceived += sp_DataReceived;
 					sp.DtrEnable = true;
 					sp.RtsEnable = true;
 					sp.Open();
 
-					//clear buffer before opp to make sure we only recieve the right stuff back
 					
-						sp.WriteLine("STATUS");
-
 					if (_id == Guid.Empty || _reportedId == _id)
 					{
 						_serialPort = sp;
@@ -173,7 +149,6 @@ namespace Lighthouse.Control
 					}
 					else
 					{
-						sp.DataReceived -= sp_DataReceived;
 						sp.Close();
 					}
 					
@@ -194,9 +169,12 @@ namespace Lighthouse.Control
 		{
 			if (_serialPort != null)
 			{
-				_serialPort.DataReceived -= sp_DataReceived;
-				_serialPort.Close();
-				_serialPort.Dispose();
+				try
+				{
+					_serialPort.Close();
+					_serialPort.Dispose();
+				}
+				catch { }
 				_serialPort = null;
 			}
 		}
@@ -232,26 +210,53 @@ namespace Lighthouse.Control
 		//		cmdBuffer.Clear();
 		//	}
 		//}
-		private void EnsureConnection(){
+		private bool EnsureConnection(){
 				if (!IsConnected)
 				{
 					Disconnect();
 					Connect();
-					if (!IsConnected)
-						throw new Exception("Serial port not connected");
+					return IsConnected;
 				}
+				return true;
 		}
 		void component_PropertChanged(object sender, PropertyChangedEventArgs e)
 		{
-			EnsureConnection();
-			var comp = sender as IComponent;
-			
-			
+			if (EnsureConnection())
+			{
+				
+					var comp = sender as IComponent;
+
+					SendCmd(comp.ComponentAddress, e.Property, e.Value);
+
+				
+			}
+
+		}
+
+		private void SendCmd(byte component, byte prop, byte value) {
+			try
+			{
 				lock (_serialPort)
 				{
-					_serialPort.Write(string.Format("{0} {1} {2}", comp.ComponentAddress, e.Property, e.Value));
+
+					byte calc_CS = 0;
+					calc_CS ^= component;
+					calc_CS ^= prop;
+					calc_CS ^= value;
+
+					_serialPort.Write(new byte[]{
+								0x06,
+								component,
+								prop, 
+								value,
+								calc_CS
+							}, 0, 5);
 				}
-				processFromPort(_serialPort);
+			}
+			catch
+			{
+				Disconnect();
+			}
 		}
 
 		public void Dispose()
